@@ -66,7 +66,28 @@ object Main {
     def generateECMAScript(types: Seq[(String, org.apache.axis2.corba.idl.types.CompositeDataType)]) = {
 
         import org.apache.axis2.corba.idl.types._
-//        idl.getCompositeDataTypes.map { case (k, v) =>
+
+        import EsType._
+
+//        implicit class TypedefWithToJs(d1: Typedef) {
+//            def toJs = {
+//                println("TYPEDEF")
+//                "TYPEDEF"
+//            }
+//        }
+
+        val jsTypes = types.map {
+            case (_, v: Typedef) => v.toJs
+            case (_, v) => s"""// UNKNOWN TYPE: ${v.getName}"""
+        }
+
+        jsTypes.mkString("\n\n")
+    }
+
+    def debugIDL(types: Seq[(String, org.apache.axis2.corba.idl.types.CompositeDataType)]) = {
+
+        import org.apache.axis2.corba.idl.types._
+
         types.map { case (k, v) =>
             print(s"${v.getName}(${v.getClass.getSimpleName}): ")
             v match {
@@ -95,13 +116,6 @@ object Main {
             }
             println(s"MEMBERS: [${v.getMembers.toSeq.map(_.getDataType)}]")
         }
-// [${e.getMembers.toSeq.map(_.getDataType)}]
-//        println("interfaces:")
-//        for ((k,v) <- idl.getInterfaces) println(s"${k}: $v")
-//
-//        println("composite types:")
-//        for ((k,v) <- idl.getCompositeDataTypes) println(s"${k}: $v")
-
         "done"
     }
 }
