@@ -78,6 +78,7 @@ object Main {
 
         val jsTypes = types.map {
             case (_, v: Typedef) => v.toJs
+            case (_, v: EnumType) => v.toJs
             case (_, v) => s"""// UNKNOWN TYPE: ${v.getName}"""
         }
 
