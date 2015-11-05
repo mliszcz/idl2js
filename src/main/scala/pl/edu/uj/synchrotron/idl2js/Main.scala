@@ -48,90 +48,19 @@ object Main {
     def sortTypes(idl: IDL) = {
 
         import org.apache.axis2.corba.idl.types._
+        import DataTypeWithDependencyCheck._
 
-        def operationsDependOn(ops: Seq[Operation], d2: DataType) =
-            ops.exists { op => (
-                    op.getReturnType().dependsOn(d2)
-                    || op.getParams.toArray.toSeq.asInstanceOf[Seq[Member]].exists {  _.getDataType.dependsOn(d2) }
-            )}
-
-        // TODO members check in each type ??
-
-        implicit class DataTypeWithDependencyCheck(d1: DataType) {
-
-            def dependsOn(d2: DataType): Boolean =
-//                if (d1.getClass equals d2.getClass) (d1, d2) match {
-//                case (t1: PrimitiveDataType, t2: PrimitiveDataType) => t1.getTypeName == t2.getTypeName
-//                case (t1: CompositeDataType, t2: CompositeDataType) => t1.getName == t2.getName
-//            } else
-                d1 match {
-                case _: PrimitiveDataType => false
-                case d: AbstractCollectionType => d.getDataType.dependsOn(d2)
-                case d: ConstType => d.getDataType.dependsOn(d2)
-                case _: EnumType => false
-                case d: Interface => operationsDependOn(d.getOperations, d2)
-                case d: Struct => d.getMembers.exists { _.getDataType.dependsOn(d2) }
-                case d: Typedef => d.getDataType.dependsOn(d2)
-                case d: UnionType => d.getMembers.exists { _.getDataType.dependsOn(d2) }
-                case d: ValueType => operationsDependOn(d.getOperations.values.asInstanceOf[Seq[Operation]], d2)
-                case _ => false
-            }
-
-            def getPriority() = d1 match {
-                case _: PrimitiveDataType => 0
-                case _: Typedef => 1
-                case _: ConstType => 2
-                case _: EnumType => 3
-                case _: UnionType => 4
-                case _: Struct => 5
-                case _: Interface => 6
-                case _: AbstractCollectionType => 7
-                case _: ValueType => 8
-                case _ => 9
-            }
-        }
-
-        idl.getCompositeDataTypes.toSeq.sortWith { case ( (_, t1: DataType), (_, t2: DataType) ) =>
-            if (t1.getClass equals t2.getClass) (t1, t2) match {
-                case (t1: PrimitiveDataType, t2: PrimitiveDataType) => t1.getTypeName < t2.getTypeName
-                case (t1: CompositeDataType, t2: CompositeDataType) => t1.getName < t2.getName
-            }
-            else if (t1 dependsOn t2) false
-            else t1.getPriority < t2.getPriority
+        idl.getCompositeDataTypes.toSeq.sortWith {
+            case ( (_, t1: DataType), (_, t2: DataType) ) =>
+                if (t1.getClass equals t2.getClass) (t1, t2) match {
+                    case (t1: PrimitiveDataType, t2: PrimitiveDataType) =>
+                        t1.getTypeName < t2.getTypeName
+                    case (t1: CompositeDataType, t2: CompositeDataType) =>
+                        t1.getName < t2.getName
+                }
+                else if (t1 dependsOn t2) true
+                else t1.getPriority < t2.getPriority
         }.asInstanceOf[Seq[(String, CompositeDataType)]]
-
-//        idl.getCompositeDataTypes.toSeq.sortWith { case ( (_, t1), (_, t2) ) =>
-//            // is t1 < t2 ?
-//            (t1, t2) match {
-//
-//                case (t1: Typedef, t2: Typedef) => t1.getName < t2.getName
-//                case (t1: Typedef, _) => true
-//
-//                case (t1: EnumType, _: Typedef) => false
-//                case (t1: EnumType, t2: EnumType) => t1.getName < t2.getName
-//                case (t1: EnumType, _) => true
-//
-//                case (t1: UnionType, _: Typedef) => false
-//                case (t1: UnionType, _: EnumType) => false
-//                case (t1: UnionType, t2: UnionType) => t1.getName < t2.getName
-//                case (t1: UnionType, _) => true
-//
-//                case (t1: Struct, t2: Typedef) => false
-//                case (t1: Struct, t2: EnumType) => false
-//                case (t1: Struct, t2: UnionType) => false
-//                case (t1: Struct, t2: Struct) => t1.getName < t2.getName // TODO handle dependent types
-//                case (t1: Struct, _) => true
-//
-//                case (t1: Interface, t2: Typedef) => false
-//                case (t1: Interface, t2: EnumType) => false
-//                case (t1: Interface, t2: UnionType) => false
-//                case (t1: Interface, t2: Struct) => false
-//                case (t1: Interface, t2: Interface) => t1.getName < t2.getName // TODO handle dependent types
-//                case (t1: Interface, _) => true
-//
-//                case (t1: CompositeDataType, t2: CompositeDataType) => t1.getName < t2.getName
-//            }
-//        }.asInstanceOf[Seq[(String, CompositeDataType)]]
     }
 
     def generateECMAScript(types: Seq[(String, org.apache.axis2.corba.idl.types.CompositeDataType)]) = {
