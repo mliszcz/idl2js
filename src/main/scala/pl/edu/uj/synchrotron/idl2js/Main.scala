@@ -69,54 +69,15 @@ object Main {
 
         import EsType._
 
-//        implicit class TypedefWithToJs(d1: Typedef) {
-//            def toJs = {
-//                println("TYPEDEF")
-//                "TYPEDEF"
-//            }
-//        }
-
         val jsTypes = types.map {
             case (_, v: Typedef) => v.toJs
             case (_, v: EnumType) => v.toJs
+            case (_, v: Struct) => v.toJs
+            case (_, v: UnionType) => v.toJs
+            case (_, v: Interface) => v.toJs
             case (_, v) => s"""// UNKNOWN TYPE: ${v.getName}"""
         }
 
         jsTypes.mkString("\n\n")
-    }
-
-    def debugIDL(types: Seq[(String, org.apache.axis2.corba.idl.types.CompositeDataType)]) = {
-
-        import org.apache.axis2.corba.idl.types._
-
-        types.map { case (k, v) =>
-            print(s"${v.getName}(${v.getClass.getSimpleName}): ")
-            v match {
-                case e: EnumType =>
-                    println(s"${e.getEnumMembers}")
-                case e: Typedef =>
-                    println(s"${e.getDataType}")
-                case e: ConstType =>
-                    println(s"${e.getDataType}")
-                case e: UnionType =>
-                    println(s"${e.getDiscriminatorType}")
-                case e: Struct =>
-                    println(s"")
-                case e: Interface =>
-                    val ops = e.getOperations.map(op => {
-                        val ret = op.getReturnType
-                        val mem = op.getParams.toArray.toSeq.asInstanceOf[Seq[Member]]
-                        val memstr = mem.map { _.getDataType }
-                        s"[${ret} -> {${memstr.toList}}]"
-                    }).toList
-                    println(s"OPS: ${ops}")
-                case e: AbstractCollectionType =>
-                    println(s"${e.getDataType}")
-                case e: ValueType =>
-                    println(s"")
-            }
-            println(s"MEMBERS: [${v.getMembers.toSeq.map(_.getDataType)}]")
-        }
-        "done"
     }
 }
