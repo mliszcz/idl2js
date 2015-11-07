@@ -47,7 +47,7 @@ package object EsType {
                | * @type {Object}
                | * @public
                | */
-               |export ${t.getName} = Enum({
+               |export const ${t.getName} = Enum({
                |  $mapping
                |})""".stripMargin
         }
@@ -61,7 +61,7 @@ package object EsType {
                 |}""".replace("|", "|  ")
         private def constructor(m: Seq[idl.Member]) =
             s"""|/** @param {Object} data */
-                |constructor (data = {}) {
+                |constructor(data = {}) {
                 |  /** @private */
                 |  this._data = Object.assign({}, data)
                 |}""".replace("|", "|  ")

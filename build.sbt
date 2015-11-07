@@ -7,3 +7,5 @@ scalaVersion := "2.11.7"
 libraryDependencies += "org.apache.axis2" % "axis2-corba" % "1.6.3"
 
 fork in run := true
+
+packAutoSettings
