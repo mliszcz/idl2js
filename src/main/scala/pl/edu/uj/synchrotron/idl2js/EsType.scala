@@ -92,8 +92,6 @@ package object EsType {
                | */
                |export class ${t.getName} $extds{
                |
-               |  constructor() { }
-               |
                $methods
                |}""".stripMargin
         }
