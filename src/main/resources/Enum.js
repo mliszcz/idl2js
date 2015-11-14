@@ -1,4 +1,3 @@
-
 function EnumConstant(key, value) {
   return Object.freeze({key, value})
 }

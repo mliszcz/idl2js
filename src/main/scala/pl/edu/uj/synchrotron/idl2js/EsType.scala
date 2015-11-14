@@ -1,43 +1,19 @@
 package pl.edu.uj.synchrotron.idl2js
 
-import org.apache.axis2.corba.idl.{types => idl}
+import org.apache.axis2.corba.idl.{types => axisidl}
+import idl.DataTypeWithEsTypename._
+import scala.language.implicitConversions
 
 package object EsType {
 
-    private def sanitizeName(name: String) =
-        if (name.exists { "|[]{}()".contains(_) }) s"($name)" else name
-
-    implicit class DataTypeWithEsdocTypename(d: idl.DataType) {
-        import idl._
-        def esdocName: String = d match {
-            case d: PrimitiveDataType => d.getTypeName match {
-                case ("int" | "long" | "short" | "byte") => "Number"
-                case ("double" | "float")                => "Number"
-                case ("boolean")                         => "Boolean"
-                case ("java.lang.String")                => "String"
-                case _                                   => "Object"
-            }
-            case d: AbstractCollectionType =>
-                s"${sanitizeName(d.getDataType.esdocName)}[]"
-            case d: ConstType => d.getDataType.esdocName
-            case d: EnumType => d.getName
-            case d: Interface => d.getName
-            case d: Struct => d.getName
-            case d: Typedef => d.getDataType.esdocName
-            case d: UnionType => d.getName
-            case d: ValueType => d.getName // TODO what is 'ValueType'?
-            case _ => "(UNKNOWN_TYPE)"
-        }
-    }
-
-    implicit class EsTypedef(t: idl.Typedef) {
+    implicit class EsTypedef(t: axisidl.Typedef) {
         def toJs =
             s"""/**
-               | * @typedef {${t.getDataType.esdocName}} ${t.getName}
+               | * @typedef {${t.getDataType.esTypename}} ${t.getName}
                | */""".stripMargin
     }
 
-    implicit class EsEnum(t: idl.EnumType) {
+    implicit class EsEnum(t: axisidl.EnumType) {
         def toJs = {
             val mapping = t.getEnumMembers.toArray.toList
                 .asInstanceOf[Seq[String]].zipWithIndex
@@ -53,13 +29,13 @@ package object EsType {
         }
     }
 
-    implicit class EsStruct(t: idl.Struct) {
-        private def getter(m: idl.Member) =
-            s"""|/** @type {${m.getDataType.esdocName}} */
+    implicit class EsStruct(t: axisidl.Struct) {
+        private def getter(m: axisidl.Member) =
+            s"""|/** @type {${m.getDataType.esTypename}} */
                 |get ${m.getName}() {
                 |  return this._data.${m.getName}
                 |}""".replace("|", "|  ")
-        private def constructor(m: Seq[idl.Member]) =
+        private def constructor(m: Seq[axisidl.Member]) =
             s"""|/** @param {Object} data */
                 |constructor(data = {}) {
                 |  /** @private */
@@ -79,9 +55,9 @@ package object EsType {
         }
     }
 
-    implicit class EsUnion(t: idl.UnionType) {
+    implicit class EsUnion(t: axisidl.UnionType) {
         def toJs = {
-            val members = t.getMembers.map(_.getDataType.esdocName)
+            val members = t.getMembers.map(_.getDataType.esTypename)
                 .map(sanitizeName).distinct.mkString("|")
             s"""/**
                | * @typedef {${members}} ${t.getName}
@@ -89,17 +65,17 @@ package object EsType {
         }
     }
 
-    implicit class EsInterface(t: idl.Interface) {
-        private def method(m: idl.Operation) = {
-            val rawm = m.getParams.toArray.toSeq.asInstanceOf[Seq[idl.Member]]
+    implicit class EsInterface(t: axisidl.Interface) {
+        private def method(m: axisidl.Operation) = {
+            val rawm = m.getParams.toArray.toSeq.asInstanceOf[Seq[axisidl.Member]]
             val mems = rawm.filterNot { _.getName equals ":" }
             val args = mems.map(_.getName).mkString(", ")
-            val pars = mems.map(m => (m.getDataType.esdocName, m.getName))
+            val pars = mems.map(m => (m.getDataType.esTypename, m.getName))
                 .map {
                     case (tpe, n) => s"| * @param {$tpe} $n $n"
                 }.mkString("\n")
             s"""|/**
-                | * @return {${m.getReturnType.esdocName}}
+                | * @return {${m.getReturnType.esTypename}}
                 ${if (pars.equals("")) "| *" else pars}
                 | */
                 |${m.getName}($args) { }""".replace("|", "|  ")
@@ -108,7 +84,7 @@ package object EsType {
             val methods = t.getOperations.filterNot { _.getName equals ":"
                 } map { method } mkString("\n\n")
             val extds = t.getOperations.find { _.getName equals ":" } map {
-                m => s"extends ${m.getReturnType.esdocName} "
+                m => s"extends ${m.getReturnType.esTypename} "
             } getOrElse ""
             s"""/**
                | * @interface
@@ -116,7 +92,7 @@ package object EsType {
                | */
                |export class ${t.getName} $extds{
                |
-               |  constructor { }
+               |  constructor() { }
                |
                $methods
                |}""".stripMargin

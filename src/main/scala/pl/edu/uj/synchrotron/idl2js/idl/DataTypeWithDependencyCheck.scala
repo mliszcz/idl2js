@@ -1,8 +1,8 @@
-package pl.edu.uj.synchrotron.idl2js
+package pl.edu.uj.synchrotron.idl2js.idl
 
 import org.apache.axis2.corba.idl.types._
 
-object DataTypeWithDependencyCheck {
+package object DataTypeWithDependencyCheck {
 
     private def operationsDependOn(ops: Seq[Operation], d2: DataType) =
         ops.exists( op => {
@@ -19,18 +19,6 @@ object DataTypeWithDependencyCheck {
             // FIXME deal with circular dependencies
             // TODO check members for every composite types
             false
-//                d1 match {
-//                case _: PrimitiveDataType => false
-//                case d: AbstractCollectionType => d.getDataType.dependsOn(d2)
-//                case d: ConstType => d.getDataType.dependsOn(d2)
-//                case _: EnumType => false
-//                case d: Interface => operationsDependOn(d.getOperations, d2)
-//                case d: Struct => d.getMembers.exists { _.getDataType.dependsOn(d2) }
-//                case d: Typedef => d.getDataType.dependsOn(d2)
-//                case d: UnionType => d.getMembers.exists { _.getDataType.dependsOn(d2) }
-//                case d: ValueType => operationsDependOn(d.getOperations.values.asInstanceOf[Seq[Operation]], d2)
-//                case _ => false
-//            }
 
         def getPriority() = d1 match {
             case _: PrimitiveDataType => 0
